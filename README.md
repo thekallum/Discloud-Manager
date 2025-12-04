@@ -1,7 +1,7 @@
 <div align="center">
 <img src="https://i.imgur.com/ITwQN6H.png" width="300"></a>
 
-# 🤖 Discloud Dashboard Bot
+# 🤖 Discloud Manager
 
 ![Status](https://img.shields.io/badge/Status-COMPLETO-green?logo=github&style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg?logo=python&logoColor=white&style=for-the-badge)
