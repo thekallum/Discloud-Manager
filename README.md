@@ -46,7 +46,7 @@ Este projeto foi desenvolvido utilizando as seguintes tecnologias:
 
 ## 💻 Pré-requisitos
 
-Antes de começar, certifique-se de ter instalado em sua máquina:
+Antes de começar, certifique-se de ter na sua máquina:
 * [Git](https://git-scm.com)
 * [Python 3.10+](https://www.python.org/downloads/)
 * Uma conta na [Discord Developer Portal](https://discord.com/developers/applications)
@@ -116,8 +116,8 @@ DISCLOUD_TOKEN=seu_token_da_api_discloud_aqui
 
 **Discloud Token:**
 1. Acesse seu [Painel Discloud](https://discloud.com/dashboard)
-2. Vá em Configurações → API
-3. Copie seu token de API
+2. Vá em API Key
+3. Copie sua chave de API
 
 ### 5. Execute o Bot
 ```bash
@@ -200,7 +200,6 @@ NAME=Discloud Dashboard
 AVATAR=https://i.imgur.com/ITwQN6H.png
 RAM=300
 AUTORESTART=true
-ID=seu_id_da_aplicacao_aqui
 ```
 
 **Campos importantes:**
@@ -245,7 +244,6 @@ discloud-dashboard/
 ├── requirements.txt     # Dependências Python
 ├── discloud.config      # Configuração de deploy Discloud
 ├── .env                 # Variáveis de ambiente (NÃO COMITAR!)
-├── .env.example         # Exemplo de configuração
 ├── .gitignore           # Arquivos ignorados pelo Git
 └── README.md            # Documentação do projeto
 ```
@@ -330,7 +328,7 @@ Encontrou um bug ou tem uma sugestão?
 
 <div align="center">
 
-Feito com 🤖 por [**Kallum**](https://github.com/thekallum)
+Feito com 🧡 por [**Kallum**](https://github.com/thekallum)
 
 ⭐ Se este projeto te ajudou, considere dar uma estrela!
 

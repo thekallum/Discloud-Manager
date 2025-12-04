@@ -249,7 +249,7 @@ class DashboardView(View):
         self.add_item(Button(label="Início", emoji=E_HOME, style=ButtonStyle.secondary, custom_id="mode_home", row=1))
         self.add_item(Button(label="Status", emoji="📊", style=ButtonStyle.primary, custom_id="mode_status", row=1))
         self.add_item(Button(label="Controle", emoji="🎮", style=ButtonStyle.secondary, custom_id="mode_control", row=1))
-        self.add_item(Button(label="Logs", emoji="📜", style=ButtonStyle.secondary, custom_id="mode_logs", row=1))
+        self.add_item(Button(label="Logs", emoji="<:terminal:1446262228121686088>", style=ButtonStyle.secondary, custom_id="mode_logs", row=1))
         self.add_item(Button(label="Tools", emoji="🛠️", style=ButtonStyle.secondary, custom_id="mode_tools", row=2))
         self.add_item(Button(label="Mods", emoji="🛡️", style=ButtonStyle.secondary, custom_id="mode_mods", row=2))
         for child in self.children:
@@ -468,7 +468,7 @@ class DashboardView(View):
     async def build_logs_view(self):
         logs = await discloud_client.logs(target=self.selected_app_id) # [cite: discloud/client.py]
         content = logs.small[:1000]
-        embed = discord.Embed(title=f"📜 Terminal: {self.current_app_name}", color=C_DARK, description=f"```bash\n{content}\n```")
+        embed = discord.Embed(title=f"<:terminal:1446262228121686088> Terminal: {self.current_app_name}", color=C_DARK, description=f"```bash\n{content}\n```")
         if len(content) >= 1000: embed.description += "\n*(Logs cortados)*"
         full_log_url = logs.url if logs.url else "https://discloudbot.com/dashboard"
         embed.add_field(name="🔗 Completo", value=f"[Ver logs completos no navegador]({full_log_url})")
