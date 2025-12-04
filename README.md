@@ -1,7 +1,7 @@
 <div align="center">
 <img src="https://i.imgur.com/ITwQN6H.png" width="300"></a>
 
-# 🤖 Discloud Dashboard Bot
+# 🤖 Discloud Manager
 
 ![Status](https://img.shields.io/badge/Status-COMPLETO-green?logo=github&style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg?logo=python&logoColor=white&style=for-the-badge)
@@ -20,7 +20,7 @@ Um bot completo com painel interativo para controlar, monitorar e fazer deploy d
 
 ## 📸 Sobre o Projeto
 
-O **Discloud Dashboard Bot** é uma solução completa para gerenciar suas aplicações hospedadas na Discloud diretamente através do Discord. Com uma interface intuitiva baseada em menus e botões, você pode controlar o ciclo de vida das suas aplicações, visualizar logs em tempo real, gerenciar moderadores e muito mais.
+O **Discloud Manager** é uma solução completa para gerenciar suas aplicações hospedadas na Discloud diretamente através do Discord. Com uma interface intuitiva baseada em menus e botões, você pode controlar o ciclo de vida das suas aplicações, visualizar logs em tempo real, gerenciar moderadores e muito mais.
 
 ### Principais Funcionalidades
 * **🎮 Painel de Controle Completo:** Interface interativa com botões para iniciar, parar e reiniciar aplicações.
