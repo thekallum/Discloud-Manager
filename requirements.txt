@@ -1,0 +1,4 @@
+discord.py
+discloud
+python-dotenv
+git+https://github.com/discloud/python-discloud-status@master
