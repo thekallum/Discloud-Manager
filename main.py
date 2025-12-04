@@ -103,19 +103,19 @@ class RamModal(Modal, title="Alterar Memória RAM"):
         await self.view_parent.set_processing(interaction, f"Alterando RAM para {amount}MB")
         
         try:
-            result = await discloud_client.ram(app_id=self.app_id, new_ram=amount) #
+            result = await discloud_client.ram(app_id=self.app_id, new_ram=amount) # [cite: discloud/client.py]
             
             # Tenta reiniciar, ou informa que não reiniciou
             start_msg = "A aplicação permaneceu desligada."
             if result.status == "ok":
                 try:
                     await asyncio.sleep(2) 
-                    await discloud_client.start(self.app_id) #
+                    await discloud_client.start(self.app_id) # [cite: discloud/client.py]
                     start_msg = "Reiniciando aplicação automaticamente..."
                 except: 
                     start_msg = "A aplicação permaneceu desligada (erro ao tentar reiniciar)."
 
-            # --- NOVO FORMATO DE RESPOSTA MAIS LEGÍVEL ---
+            # --- RESPOSTA FORMATADA ---
             is_success = result.status == "ok"
             title_emoji = E_SUCCESS if is_success else E_ERROR
             embed_color = C_GREEN if is_success else C_RED
@@ -150,13 +150,13 @@ class ModActionModal(Modal):
 
     async def on_submit(self, interaction: Interaction):
         await interaction.response.defer(ephemeral=True)
-        mod_manager = discloud.ModManager(discloud_client, self.app_id) #
+        mod_manager = discloud.ModManager(discloud_client, self.app_id) # [cite: discloud/client.py]
         perms_list = [p.strip() for p in self.perms.value.split(",") if p.strip()]
         try:
             if self.action_type == "add":
-                result = await mod_manager.add_mod(mod_id=self.mod_id.value, perms=perms_list) #
+                result = await mod_manager.add_mod(mod_id=self.mod_id.value, perms=perms_list) # [cite: discloud/client.py]
             else:
-                result = await mod_manager.edit_mod_perms(mod_id=self.mod_id.value, new_perms=perms_list) #
+                result = await mod_manager.edit_mod_perms(mod_id=self.mod_id.value, new_perms=perms_list) # [cite: discloud/client.py]
             embed = discord.Embed(title=f"{E_MODS} Mod {self.action_type}", description=result.message, color=C_GREEN)
             await interaction.followup.send(embed=embed, ephemeral=True)
             await self.view_parent.update_dashboard(interaction)
@@ -171,7 +171,7 @@ class RemoveModModal(Modal, title="Remover Moderador"):
     async def on_submit(self, intx):
         await intx.response.defer(ephemeral=True)
         try:
-            res = await discloud.ModManager(discloud_client, self.app_id).delete_mod(self.mod_id.value) #
+            res = await discloud.ModManager(discloud_client, self.app_id).delete_mod(self.mod_id.value) # [cite: discloud/client.py]
             await intx.followup.send(embed=discord.Embed(title="🗑️ Removido", description=res.message, color=C_GREEN), ephemeral=True)
             await self.view_parent.update_dashboard(intx)
         except Exception as e: await intx.followup.send(f"❌ Erro: {e}", ephemeral=True)
@@ -196,7 +196,7 @@ class DeleteAppModal(Modal, title="DELETAR APLICAÇÃO"):
         await self.view_parent.set_processing(interaction, f"Deletando App: {self.app_id}")
         
         try:
-            result = await discloud_client.delete_app(self.app_id) #
+            result = await discloud_client.delete_app(self.app_id) # [cite: discloud/client.py]
             
             embed = discord.Embed(
                 title="🗑️ Aplicação Deletada",
@@ -218,7 +218,9 @@ class DeleteAppModal(Modal, title="DELETAR APLICAÇÃO"):
 class AppSelect(Select):
     def __init__(self, apps: List[ApplicationInfo]):
         options = []
-        for app in apps[:25]:
+        # O Discord limita selects a 25 opções. 
+        # Mantemos [:25] aqui para não quebrar a UI, mas a lista no embed mostrará tudo.
+        for app in apps[:25]: 
             emoji = E_ONLINE if app.online else E_OFFLINE
             label = app.name
             desc = f"ID: {app.id} | {app.lang}"
@@ -298,7 +300,6 @@ class DashboardView(View):
             if isinstance(item, Button) and getattr(item, 'custom_id', '').startswith("mode_"):
                 if self.current_mode == "home":
                     if item.custom_id != "mode_home":
-                        # REMOVIDA A LINHA: item.disabled = True (para evitar que todos os botões fiquem desabilitados)
                         item.style = ButtonStyle.secondary
                     else:
                         item.style = ButtonStyle.success
@@ -351,9 +352,10 @@ class DashboardView(View):
     
     # --- BUILDERS (VIEWS) ---
     async def build_home_view(self, user_discord):
-        user = await discloud_client.user_info() #
-        apps = await discloud_client.app_info("all") #
+        user = await discloud_client.user_info() # [cite: discloud/client.py]
+        apps = await discloud_client.app_info("all") # [cite: discloud/client.py]
         apps = apps if isinstance(apps, list) else [apps] if apps else []
+        
         embed = discord.Embed(title=f"{E_PLAN} Olá, Disclouder!", color=C_PURPLE)
         embed.set_thumbnail(url=user_discord.display_avatar.url)
         embed.add_field(name="🆔 Usuário", value=f"`{user.id}`", inline=True)
@@ -367,17 +369,40 @@ class DashboardView(View):
         embed.add_field(name="🗓️ Validade", value=expire_str, inline=True)
         bar = create_emoji_bar(str(user.using_ram), str(user.total_ram))
         embed.add_field(name=f"{E_RAM} RAM Global ({user.using_ram}MB / {user.total_ram}MB)", value=f"{bar}", inline=False)
-        app_list = "\n".join([f"• **{app.name}** (`{app.id}`)" for app in apps[:5]])
-        if not app_list: app_list = "Nenhuma aplicação encontrada."
-        embed.add_field(name="📂 Minhas aplicações", value=app_list, inline=False)
+        
+        # --- CORREÇÃO DE LISTAGEM ---
+        # Cria campos dinamicamente para suportar muitas aplicações
+        app_list_lines = [f"• **{app.name}** (`{app.id}`)" for app in apps]
+        
+        if not app_list_lines:
+            embed.add_field(name="📂 Minhas aplicações", value="Nenhuma aplicação encontrada.", inline=False)
+        else:
+            current_chunk = ""
+            field_idx = 1
+            
+            for line in app_list_lines:
+                # 1024 é o limite do discord por field. Usamos 1000 por segurança.
+                if len(current_chunk) + len(line) + 2 >= 1000:
+                    name = f"📂 Minhas aplicações" if field_idx == 1 else f"📂 Aplicações ({field_idx})"
+                    embed.add_field(name=name, value=current_chunk, inline=False)
+                    current_chunk = ""
+                    field_idx += 1
+                
+                current_chunk += line + "\n"
+            
+            if current_chunk:
+                name = "📂 Minhas aplicações" if field_idx == 1 else f"📂 Aplicações ({field_idx})"
+                embed.add_field(name=name, value=current_chunk, inline=False)
+        # ---------------------
+
         embed.set_footer(
-            text="Selecione uma aplicação no menu acima. | Discloud Manager",
+            text="Selecione uma aplicação no menu acima.",
             icon_url=bot.user.display_avatar.url
         )
         return embed
 
     async def build_status_view(self):
-        status = await discloud_client.app_status(target=self.selected_app_id) #
+        status = await discloud_client.app_status(target=self.selected_app_id) # [cite: discloud/client.py]
         info = self.apps_info_map.get(self.selected_app_id)
         color = C_GREEN if status.status == "Online" else C_RED
         embed = discord.Embed(title=f"App: {self.current_app_name}", color=color)
@@ -405,7 +430,6 @@ class DashboardView(View):
         embed.add_field(name=f"{E_NET} Rede", value=f"`{net}`", inline=True)
         embed.add_field(name=f"{E_SSD} SSD", value=f"`{status.ssd}`", inline=True)
 
-        # Uptime com Formatação Discord (Relative Time)
         uptime = "🔴 Desligado"
         if status.status == "Online":
             if hasattr(status, 'start_date') and hasattr(status.start_date, 'date'):
@@ -442,7 +466,7 @@ class DashboardView(View):
         return embed
 
     async def build_logs_view(self):
-        logs = await discloud_client.logs(target=self.selected_app_id) #
+        logs = await discloud_client.logs(target=self.selected_app_id) # [cite: discloud/client.py]
         content = logs.small[:1000]
         embed = discord.Embed(title=f"📜 Terminal: {self.current_app_name}", color=C_DARK, description=f"```bash\n{content}\n```")
         if len(content) >= 1000: embed.description += "\n*(Logs cortados)*"
@@ -451,19 +475,19 @@ class DashboardView(View):
         return embed
 
     async def build_mods_view(self):
-        mods = await discloud.ModManager(discloud_client, self.selected_app_id).get_mods() #
+        mods = await discloud.ModManager(discloud_client, self.selected_app_id).get_mods() # [cite: discloud/client.py]
         mods = mods if isinstance(mods, list) else [mods] if mods else []
         embed = discord.Embed(title=f"{E_MODS} Equipe: {self.current_app_name}", color=C_PURPLE)
-        if not mods: embed.description = "Nenhum moderador foi adicionado para esta aplicação."
+        if not mods: embed.description = "Nenhum moderador extra configurado."
         for mod in mods:
             perms = ", ".join(mod.perms) if mod.perms else "Sem permissões"
             embed.add_field(name=f"👤 {mod.id}", value=f"Perms: `{perms}`", inline=False)
         return embed
 
     def add_control_buttons(self):
-        self.make_btn("Iniciar", E_ONLINE, ButtonStyle.success, discloud_client.start) #
-        self.make_btn("Reiniciar", "🔄", ButtonStyle.primary, discloud_client.restart) #
-        self.make_btn("Parar", E_OFFLINE, ButtonStyle.danger, discloud_client.stop) #
+        self.make_btn("Iniciar", E_ONLINE, ButtonStyle.success, discloud_client.start)
+        self.make_btn("Reiniciar", "🔄", ButtonStyle.primary, discloud_client.restart)
+        self.make_btn("Parar", E_OFFLINE, ButtonStyle.danger, discloud_client.stop)
     
     def add_tools_buttons(self):
         # 1. Backup
@@ -472,7 +496,7 @@ class DashboardView(View):
             await i.response.defer()
             await self.set_processing(i, "Backup") # <--- Feedback visual imediato
             try:
-                b = await discloud_client.backup(self.selected_app_id) #
+                b = await discloud_client.backup(self.selected_app_id) # [cite: discloud/client.py]
                 url = b.url if not isinstance(b, list) else b[0].url
                 await i.followup.send(f"{E_SUCCESS} 📦 [Backup Pronto]({url})", ephemeral=True)
                 await self.update_dashboard(i)
@@ -540,7 +564,7 @@ async def sync(ctx):
 async def painel(interaction: Interaction):
     await interaction.response.defer()
     try:
-        apps = await discloud_client.app_info("all") #
+        apps = await discloud_client.app_info("all") # [cite: discloud/client.py]
         apps = apps if isinstance(apps, list) else [apps] if apps else []
         view = DashboardView(apps)
         embed = await view.build_home_view(interaction.user)
@@ -555,7 +579,7 @@ async def commit(interaction: Interaction, app_id: str, file_attachment: discord
     try:
         d_file = discloud.File(io.BytesIO(await file_attachment.read()))
         d_file.filename = file_attachment.filename
-        res = await discloud_client.commit(app_id, d_file) #
+        res = await discloud_client.commit(app_id, d_file) # [cite: discloud/client.py]
         await interaction.followup.send(embed=discord.Embed(title="📦 Commit OK", description=res.message, color=C_GREEN))
     except Exception as e: await interaction.followup.send(f"❌ Erro: {e}")
 
@@ -575,7 +599,7 @@ async def upload(interaction: Interaction, file_attachment: discord.Attachment):
         file_bytes = io.BytesIO(await file_attachment.read())
         d_file = discloud.File(file_bytes)
         d_file.filename = file_attachment.filename
-        result = await discloud_client.upload_app(file=d_file) #
+        result = await discloud_client.upload_app(file=d_file) # [cite: discloud/client.py]
         if result.status == "ok":
             success_embed = discord.Embed(
                 title=f"{E_SUCCESS} Upload Concluído!",
