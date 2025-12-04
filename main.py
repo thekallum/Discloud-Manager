@@ -396,7 +396,7 @@ class DashboardView(View):
         # ---------------------
 
         embed.set_footer(
-            text="Selecione uma aplicação no menu acima.",
+            text="Selecione uma aplicação no menu abaixo.",
             icon_url=bot.user.display_avatar.url
         )
         return embed
