@@ -20,7 +20,7 @@ Um bot completo com painel interativo para controlar, monitorar e fazer deploy d
 
 ## 📸 Sobre o Projeto
 
-O **Discloud Manager** é uma solução completa para gerenciar suas aplicações hospedadas na Discloud diretamente através do Discord. Com uma interface intuitiva baseada em menus e botões, você pode controlar o ciclo de vida das suas aplicações, visualizar logs em tempo real, gerenciar moderadores e muito mais.
+O **Discloud Manager** é uma solução completa para gerenciar suas aplicações hospedadas na Discloud diretamente através do Discord. Com uma interface intuitiva baseada em menus e botões, você pode controlar as suas aplicações, visualizar logs em tempo real, gerenciar moderadores e muito mais.
 
 ### Principais Funcionalidades
 * **🎮 Painel de Controle Completo:** Interface interativa com botões para iniciar, parar e reiniciar aplicações.
@@ -289,7 +289,7 @@ Contribuições são sempre bem-vindas! Se você tem uma ideia de melhoria:
 ### v1.0.0 (Atual)
 - ✨ Painel interativo completo
 - 📊 Monitoramento de recursos em tempo real
-- 🎮 Controles de ciclo de vida (start/stop/restart)
+- 🎮 Controles da aplicação (start/stop/restart)
 - 📜 Visualização de logs
 - 🛠️ Ferramentas de backup e gestão de RAM
 - 🛡️ Sistema de moderadores
