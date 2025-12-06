@@ -659,7 +659,7 @@ class DashboardView(View):
                 name = "📂 Minhas aplicações" if field_idx == 1 else f"📂 Aplicações ({field_idx})"
                 embed.add_field(name=name, value=current_chunk, inline=False)
 
-        embed.set_footer(text="Selecione uma aplicação no menu acima. | Discloud Manager", icon_url=bot.user.display_avatar.url)
+        embed.set_footer(text="Selecione uma aplicação no menu abaixo.", icon_url=bot.user.display_avatar.url)
         return embed
 
     async def build_status_view(self):
@@ -746,16 +746,26 @@ class DashboardView(View):
         self.make_btn("Parar", E_OFFLINE, ButtonStyle.danger, discloud_client.stop)
     
     def add_tools_buttons(self):
-        # Backup (Mensagem Efêmera)
+        # Backup (Mensagem Efêmera com Botão de Link)
         btn_bkp = Button(label="Baixar Backup", emoji="💾", style=ButtonStyle.secondary, row=3)
         async def bkp_cb(i):
-            await self.set_processing(i, "Backup")
+            await self.set_processing(i, "Gerando Backup")
             try:
                 b = await discloud_client.backup(self.selected_app_id)
+                # Verifica se é lista ou objeto único, conforme comportamento da lib
                 url = b.url if not isinstance(b, list) else b[0].url
-                await i.followup.send(f"{E_SUCCESS} 📦 [Backup Pronto]({url})", ephemeral=True)
-            except Exception as e: await i.followup.send(f"❌ Erro Backup: {e}", ephemeral=True)
+                
+                # CRIAÇÃO DO BOTÃO DE LINK
+                link_button = Button(label="Baixar Backup", style=ButtonStyle.link, url=url, emoji="💾")
+                link_view = View()
+                link_view.add_item(link_button)
+                
+                await i.followup.send(f"{E_SUCCESS} **Backup gerado com sucesso!**\nClique no botão abaixo para iniciar o download.", view=link_view, ephemeral=True)
+            except Exception as e: 
+                await i.followup.send(f"❌ Erro ao gerar Backup: {e}", ephemeral=True)
+            
             await self.update_dashboard(i, silent_update=True)
+            
         btn_bkp.callback = bkp_cb
         self.add_item(btn_bkp)
 
