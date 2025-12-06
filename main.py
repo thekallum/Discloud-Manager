@@ -569,7 +569,7 @@ class DashboardView(View):
                 btn_ref.callback = self.update_dashboard
                 self.add_item(btn_ref)
             elif self.current_mode == "control":
-                embed = discord.Embed(title=f"🎮 Controle: {self.current_app_name}", color=C_GOLD, description="Gerencie o ciclo de vida da aplicação.")
+                embed = discord.Embed(title=f"🎮 Controle: {self.current_app_name}", color=C_GOLD, description="Gerencie a sua aplicação.")
                 self.add_control_buttons()
             elif self.current_mode == "logs":
                 embed = await self.build_logs_view()
