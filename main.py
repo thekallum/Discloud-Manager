@@ -40,9 +40,9 @@ C_PURPLE = 0x9B59B6
 
 E_ONLINE = "🟢"
 E_OFFLINE = "🔴"
-E_CPU = "🖥️"
+E_CPU = "<:cpu:1446905260659445831>"
 E_RAM = "<:memoriaram:1445901548638048489>"
-E_SSD = "💾"
+E_SSD = "<:ssd:1446905262324846764>"
 E_NET = "🌐"
 E_LOADING = "⏳"
 E_SUCCESS = "✅"
@@ -59,11 +59,11 @@ VALID_PERMISSIONS = [
     discord.SelectOption(label="Iniciar App", value="start_app", description="Permite iniciar a aplicação", emoji="🟢"),
     discord.SelectOption(label="Parar App", value="stop_app", description="Permite parar a aplicação", emoji="🔴"),
     discord.SelectOption(label="Reiniciar App", value="restart_app", description="Permite reiniciar a aplicação", emoji="🔄"),
-    discord.SelectOption(label="Ver Logs", value="logs_app", description="Permite ver o terminal/logs", emoji="📜"),
+    discord.SelectOption(label="Ver Logs", value="logs_app", description="Permite ver o terminal/logs", emoji="<:terminal:1446262228121686088>"),
     discord.SelectOption(label="Ver Status", value="status_app", description="Permite ver consumo de RAM/CPU", emoji="📊"),
     discord.SelectOption(label="Fazer Commit", value="commit_app", description="Permite atualizar o bot (zip)", emoji="📦"),
     discord.SelectOption(label="Editar RAM", value="edit_ram", description="Permite alterar a quantidade de RAM", emoji=E_RAM),
-    discord.SelectOption(label="Backup", value="backup_app", description="Permite baixar o backup", emoji="💾"),
+    discord.SelectOption(label="Backup", value="backup_app", description="Permite baixar o backup", emoji="<:backup:1446905215050842254>"),
 ]
 
 # --- HELPER: BARRA DE PROGRESSO & PARSER ---
@@ -482,9 +482,9 @@ class DashboardView(View):
     def create_nav_buttons(self):
         self.add_item(Button(label="Início", emoji=E_HOME, style=ButtonStyle.secondary, custom_id="mode_home", row=1))
         self.add_item(Button(label="Status", emoji="📊", style=ButtonStyle.primary, custom_id="mode_status", row=1))
-        self.add_item(Button(label="Controle", emoji="🎮", style=ButtonStyle.secondary, custom_id="mode_control", row=1))
-        self.add_item(Button(label="Logs", emoji="📜", style=ButtonStyle.secondary, custom_id="mode_logs", row=1))
-        self.add_item(Button(label="Tools", emoji="🛠️", style=ButtonStyle.secondary, custom_id="mode_tools", row=2))
+        self.add_item(Button(label="Controle", emoji="<:controle:1446905259191570464>", style=ButtonStyle.secondary, custom_id="mode_control", row=1))
+        self.add_item(Button(label="Logs", emoji="<:terminal:1446262228121686088>", style=ButtonStyle.secondary, custom_id="mode_logs", row=1))
+        self.add_item(Button(label="Tools", emoji="<:tools:1446905257417248818>", style=ButtonStyle.secondary, custom_id="mode_tools", row=2))
         self.add_item(Button(label="Mods", emoji="🛡️", style=ButtonStyle.secondary, custom_id="mode_mods", row=2))
         for child in self.children:
             if isinstance(child, Button) and getattr(child, 'custom_id', '').startswith("mode_"): 
@@ -569,7 +569,7 @@ class DashboardView(View):
                 btn_ref.callback = self.update_dashboard
                 self.add_item(btn_ref)
             elif self.current_mode == "control":
-                embed = discord.Embed(title=f"🎮 Controle: {self.current_app_name}", color=C_GOLD, description="Gerencie a sua aplicação.")
+                embed = discord.Embed(title=f"<:controle:1446905259191570464> Controle: {self.current_app_name}", color=C_GOLD, description="Gerencie a sua aplicação.")
                 self.add_control_buttons()
             elif self.current_mode == "logs":
                 embed = await self.build_logs_view()
@@ -713,9 +713,9 @@ class DashboardView(View):
         return embed
 
     async def build_tools_view(self):
-        embed = discord.Embed(title=f"🛠️ Caixa de Ferramentas: {self.current_app_name}", color=C_BLUE)
+        embed = discord.Embed(title=f"<:tools:1446905257417248818> Caixa de Ferramentas: {self.current_app_name}", color=C_BLUE)
         embed.description = "Utilitários avançados para manutenção."
-        embed.add_field(name="💾 Backup", value="Baixar código-fonte.", inline=True)
+        embed.add_field(name="<:backup:1446905215050842254> Backup", value="Baixar código-fonte.", inline=True)
         embed.add_field(name="<:memoriaram:1445901548638048489> RAM", value="Alterar memória RAM.", inline=True)
         embed.add_field(name="📦 Update", value="Use `/commit`.", inline=True)
         return embed
@@ -723,7 +723,7 @@ class DashboardView(View):
     async def build_logs_view(self):
         logs = await discloud_client.logs(target=self.selected_app_id)
         content = logs.small[:1000]
-        embed = discord.Embed(title=f"📜 Terminal: {self.current_app_name}", color=C_DARK, description=f"```bash\n{content}\n```")
+        embed = discord.Embed(title=f"<:terminal:1446262228121686088> Terminal: {self.current_app_name}", color=C_DARK, description=f"```bash\n{content}\n```")
         if len(content) >= 1000: embed.description += "\n*(Logs cortados)*"
         full_log_url = logs.url if logs.url else "https://discloudbot.com/dashboard"
         embed.add_field(name="🔗 Completo", value=f"[Ver logs completos no navegador]({full_log_url})")
@@ -747,7 +747,7 @@ class DashboardView(View):
     
     def add_tools_buttons(self):
         # Backup (Mensagem Efêmera com Botão de Link)
-        btn_bkp = Button(label="Baixar Backup", emoji="💾", style=ButtonStyle.secondary, row=3)
+        btn_bkp = Button(label="Baixar Backup", emoji="<:backup:1446905215050842254>", style=ButtonStyle.secondary, row=3)
         async def bkp_cb(i):
             await self.set_processing(i, "Gerando Backup")
             try:
@@ -756,7 +756,7 @@ class DashboardView(View):
                 url = b.url if not isinstance(b, list) else b[0].url
                 
                 # CRIAÇÃO DO BOTÃO DE LINK
-                link_button = Button(label="Baixar Backup", style=ButtonStyle.link, url=url, emoji="💾")
+                link_button = Button(label="Baixar Backup", style=ButtonStyle.link, url=url, emoji="<:backup:1446905215050842254>")
                 link_view = View()
                 link_view.add_item(link_button)
                 
