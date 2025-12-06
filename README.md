@@ -222,7 +222,7 @@ AUTORESTART=true
 
 **Pelo Site:**
 1. Comprima seu projeto em um arquivo `.zip` (não inclua a pasta `venv`)
-2. Acesse [Discloud Upload](https://discloud.com/upload)
+2. Acesse [Discloud Upload](https://discloud.com/dashboard/upload)
 3. Faça upload do arquivo `.zip`
 
 **Pela CLI:**
