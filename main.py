@@ -5,7 +5,7 @@ from discord.ui import Button, View, Select, Modal, TextInput
 import io
 import os
 import asyncio
-import aiohttp # Adicionado para requisições customizadas
+import aiohttp # Added for custom requests
 from datetime import datetime
 from dotenv import load_dotenv
 from typing import List, Optional, Dict
@@ -309,6 +309,10 @@ class ChangeNameModal(Modal, title="Alterar Nome da App"):
             success, msg = await update_app_profile(self.app_id, self.new_name.value, current_avatar)
             
             if success:
+                # ATUALIZAÇÃO MANUAL DO CACHE LOCAL PARA REFLETIR A MUDANÇA IMEDIATAMENTE
+                if self.app_id in self.view_parent.apps_info_map:
+                    self.view_parent.apps_info_map[self.app_id].name = self.new_name.value
+                
                 embed = discord.Embed(title=f"{E_SUCCESS} Nome Alterado", description=f"O nome foi atualizado para **{self.new_name.value}**.", color=C_GREEN)
             else:
                 embed = discord.Embed(title=f"{E_ERROR} Erro", description=f"Falha ao alterar nome: {msg}", color=C_RED)
@@ -340,6 +344,10 @@ class ChangeAvatarModal(Modal, title="Alterar Avatar da App"):
             success, msg = await update_app_profile(self.app_id, current_name, self.avatar_url.value)
             
             if success:
+                # ATUALIZAÇÃO MANUAL DO CACHE LOCAL PARA REFLETIR A MUDANÇA IMEDIATAMENTE
+                if self.app_id in self.view_parent.apps_info_map:
+                    self.view_parent.apps_info_map[self.app_id].avatarURL = self.avatar_url.value
+
                 embed = discord.Embed(title=f"{E_SUCCESS} Avatar Alterado", description=f"O avatar foi atualizado com sucesso.", color=C_GREEN)
                 embed.set_thumbnail(url=self.avatar_url.value)
             else:
