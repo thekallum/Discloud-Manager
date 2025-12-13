@@ -319,7 +319,7 @@ Contribuições são sempre bem-vindas! Se você tem uma ideia de melhoria:
 
 ---
 
-##<a id="licenca"></a> ⚖️ Licença
+## <a id="licenca"></a> ⚖️ Licença
 
 Este projeto está licenciado sob a licença **MIT**.
 
