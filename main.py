@@ -5,7 +5,7 @@ from discord.ui import Button, View, Select, Modal, TextInput
 import io
 import os
 import asyncio
-import aiohttp # Added for custom requests
+import aiohttp 
 from datetime import datetime
 from dotenv import load_dotenv
 from typing import List, Optional, Dict
@@ -85,7 +85,6 @@ def create_emoji_bar(current_str: str, total_str: str, length=10) -> str:
 
 # --- FUNÇÃO HELPER PARA API DE PERFIL ---
 async def update_app_profile(app_id: str, name: str, avatar_url: str):
-    """Função auxiliar para chamar o endpoint de perfil manualmente via aiohttp"""
     url = f"https://api.discloud.app/v2/app/{app_id}/profile"
     headers = {
         "api-token": DISCLOUD_TOKEN,
@@ -130,7 +129,6 @@ class PermissionSelect(Select):
         await interaction.response.defer()
 
 class ModRightsView(View):
-    """View para selecionar permissões e confirmar a ação (Add ou Edit)"""
     def __init__(self, app_id: str, mod_id: str, mode: str, dashboard_view, current_perms: List[str] = None):
         super().__init__(timeout=300)
         self.app_id = app_id
@@ -162,7 +160,6 @@ class ModRightsView(View):
                 result = await mod_manager.edit_mod_perms(mod_id=self.mod_id, new_perms=perms_list)
                 title = "Permissões Editadas"
             
-            # Mods continuam usando notificação no painel pois é uma navegação
             self.dashboard_view.last_notification = {
                 "title": f"{E_SUCCESS} {title}",
                 "description": f"{result.message}\n**Mod:** `{self.mod_id}`\n**Permissões:** {len(perms_list)} selecionadas.",
@@ -174,9 +171,8 @@ class ModRightsView(View):
             await interaction.followup.send(f"❌ Erro: {e}", ephemeral=True)
 
 class ModListSelect(Select):
-    """Select para escolher qual Mod Editar ou Remover"""
     def __init__(self, mods: List[AppMod], mode: str, dashboard_view, app_id: str):
-        self.mode = mode # "edit" ou "remove"
+        self.mode = mode 
         self.dashboard_view = dashboard_view
         self.app_id = app_id
         self.mods = mods
@@ -191,24 +187,21 @@ class ModListSelect(Select):
                 emoji="👤"
             ))
             
-        # Configuração Dinâmica: Se for remover, permite selecionar vários (até o limite do discord ou lista)
         max_v = len(options) if mode == "remove" else 1
         placeholder_text = "Selecione os moderadores para remover..." if mode == "remove" else "Selecione um moderador..."
 
         super().__init__(
             placeholder=placeholder_text,
             min_values=1,
-            max_values=max_v, # Permite multiselect se for remove
+            max_values=max_v,
             options=options
         )
 
     async def callback(self, interaction: Interaction):
-        # Se for remover, NÃO faz nada aqui. Espera o botão confirmar.
         if self.mode == "remove":
             await interaction.response.defer()
             return
 
-        # Se for EDITAR, mantém o comportamento de ir direto (apenas 1 selecionado)
         if self.mode == "edit":
             mod_id = self.values[0]
             selected_mod = next((m for m in self.mods if str(m.id) == mod_id), None)
@@ -225,23 +218,19 @@ class ModListSelect(Select):
             )
 
 class ModSelectionView(View):
-    """Container para a lista de mods"""
     def __init__(self, mods, mode, dashboard_view, app_id):
         super().__init__(timeout=300)
         self.dashboard_view = dashboard_view
         self.mode = mode
         self.app_id = app_id
         
-        # Cria o select e o adiciona
         self.select_menu = ModListSelect(mods, mode, dashboard_view, app_id)
         self.add_item(self.select_menu)
         
-        # Botão Voltar (Sempre presente)
         btn_back = Button(label="Voltar", style=ButtonStyle.secondary, emoji="⬅️", row=2)
         btn_back.callback = self.cancel
         self.add_item(btn_back)
 
-        # Botão Confirmar (APENAS se for REMOVER)
         if mode == "remove":
             btn_confirm = Button(label="Confirmar Exclusão", style=ButtonStyle.danger, emoji="🗑️", row=2)
             btn_confirm.callback = self.confirm_delete
@@ -252,11 +241,9 @@ class ModSelectionView(View):
 
     async def confirm_delete(self, interaction: Interaction):
         selected_ids = self.select_menu.values
-        
         if not selected_ids:
             return await interaction.response.send_message("❌ Selecione pelo menos um moderador na lista acima.", ephemeral=True)
         
-        # Feedback visual imediato
         await self.dashboard_view.set_processing(interaction, f"Removendo {len(selected_ids)} moderadores")
         
         mod_manager = discloud.ModManager(discloud_client, self.app_id)
@@ -271,14 +258,12 @@ class ModSelectionView(View):
                 errors += 1
                 results.append(f"❌ `{mod_id}`: {str(e)}")
         
-        # Cria o relatório final
         report = "\n".join(results)
         if len(report) > 1000: report = report[:1000] + "\n...(mais)"
         
         color = C_GREEN if errors == 0 else C_GOLD
         title = "🗑️ Relatório de Remoção"
         
-        # Usa notificação no painel pois é navegação
         self.dashboard_view.last_notification = {
             "title": title,
             "description": report,
@@ -301,19 +286,24 @@ class ChangeNameModal(Modal, title="Alterar Nome da App"):
         await self.view_parent.set_processing(interaction, f"Atualizando Perfil...")
         
         try:
-            # 1. Busca dados atuais (precisamos do avatar para enviar junto)
             app = await discloud_client.app_info(self.app_id)
             current_avatar = app.avatarURL
             
-            # 2. Chama a API
             success, msg = await update_app_profile(self.app_id, self.new_name.value, current_avatar)
             
             if success:
-                # ATUALIZAÇÃO MANUAL DO CACHE LOCAL PARA REFLETIR A MUDANÇA IMEDIATAMENTE
                 if self.app_id in self.view_parent.apps_info_map:
                     self.view_parent.apps_info_map[self.app_id].name = self.new_name.value
                 
-                embed = discord.Embed(title=f"{E_SUCCESS} Nome Alterado", description=f"O nome foi atualizado para **{self.new_name.value}**.", color=C_GREEN)
+                # --- EMBED PADRONIZADO ---
+                embed = discord.Embed(
+                    title=f"{E_SUCCESS} Nome Alterado!",
+                    description=f"O nome da aplicação foi atualizado para **{self.new_name.value}**.",
+                    color=C_GREEN
+                )
+                embed.add_field(name="📝 Detalhes da API", value=f"```diff\n+ {msg}\n```", inline=False)
+                embed.set_footer(text="Discloud Manager • Perfil atualizado", icon_url=interaction.client.user.display_avatar.url)
+                embed.timestamp = datetime.now()
             else:
                 embed = discord.Embed(title=f"{E_ERROR} Erro", description=f"Falha ao alterar nome: {msg}", color=C_RED)
 
@@ -336,20 +326,25 @@ class ChangeAvatarModal(Modal, title="Alterar Avatar da App"):
         await self.view_parent.set_processing(interaction, f"Atualizando Avatar...")
         
         try:
-            # 1. Busca dados atuais (precisamos do nome para enviar junto)
             app = await discloud_client.app_info(self.app_id)
             current_name = app.name
             
-            # 2. Chama a API
             success, msg = await update_app_profile(self.app_id, current_name, self.avatar_url.value)
             
             if success:
-                # ATUALIZAÇÃO MANUAL DO CACHE LOCAL PARA REFLETIR A MUDANÇA IMEDIATAMENTE
                 if self.app_id in self.view_parent.apps_info_map:
                     self.view_parent.apps_info_map[self.app_id].avatarURL = self.avatar_url.value
 
-                embed = discord.Embed(title=f"{E_SUCCESS} Avatar Alterado", description=f"O avatar foi atualizado com sucesso.", color=C_GREEN)
+                # --- EMBED PADRONIZADO ---
+                embed = discord.Embed(
+                    title=f"{E_SUCCESS} Avatar Alterado!",
+                    description=f"O avatar da aplicação foi atualizado com sucesso.",
+                    color=C_GREEN
+                )
                 embed.set_thumbnail(url=self.avatar_url.value)
+                embed.add_field(name="📝 Detalhes da API", value=f"```diff\n+ {msg}\n```", inline=False)
+                embed.set_footer(text="Discloud Manager • Perfil atualizado", icon_url=interaction.client.user.display_avatar.url)
+                embed.timestamp = datetime.now()
             else:
                 embed = discord.Embed(title=f"{E_ERROR} Erro", description=f"Falha ao alterar avatar: {msg}", color=C_RED)
 
@@ -392,13 +387,12 @@ class RamModal(Modal, title="Alterar Memória RAM"):
         except ValueError:
             return await interaction.response.send_message("❌ Valor inválido.", ephemeral=True)
 
-        # 1. Feedback visual no painel (Processando...)
         await self.view_parent.set_processing(interaction, f"Alterando RAM para {amount}MB")
         
-        # 2. Executa a ação
         try:
             result = await discloud_client.ram(app_id=self.app_id, new_ram=amount)
             start_msg = "A aplicação permaneceu desligada."
+            
             if result.status == "ok":
                 try:
                     await asyncio.sleep(2) 
@@ -409,15 +403,27 @@ class RamModal(Modal, title="Alterar Memória RAM"):
             is_success = result.status == "ok"
             api_msg = result.message.replace('ramMB', 'RAM')
             
-            embed = discord.Embed(
-                title=f"{E_SUCCESS if is_success else E_ERROR} RAM Alterada",
-                description=f"**Nova RAM:** `{amount}MB`\n**Msg:** {api_msg}\nℹ️ *{start_msg}*",
-                color=C_GREEN if is_success else C_RED
-            )
-            # 3. Envia resposta efêmera
+            # --- EMBED PADRONIZADO ---
+            if is_success:
+                embed = discord.Embed(
+                    title=f"{E_SUCCESS} RAM Alterada!",
+                    description=f"A quantidade de memória foi ajustada para **{amount}MB**.",
+                    color=C_GREEN
+                )
+                # Garante que a mensagem tenha o "+" para ficar verde no diff
+                clean_msg = api_msg if api_msg.startswith("+") else f"+ {api_msg}"
+                
+                embed.add_field(name="📝 Detalhes da API", value=f"```diff\n{clean_msg}\n```", inline=False)
+                
+                if "Reiniciando" in start_msg:
+                    embed.add_field(name="🚀 Ação Adicional", value="O sistema tentou reiniciar a aplicação automaticamente.", inline=False)
+
+                embed.set_footer(text="Discloud Manager • Configuração atualizada", icon_url=interaction.client.user.display_avatar.url)
+                embed.timestamp = datetime.now()
+            else:
+                embed = discord.Embed(title=f"{E_ERROR} Erro ao alterar RAM", description=api_msg, color=C_RED)
+
             await interaction.followup.send(embed=embed, ephemeral=True)
-            
-            # 4. Restaura o painel silenciosamente
             await self.view_parent.update_dashboard(interaction, silent_update=True)
             
         except Exception as e:
@@ -425,50 +431,104 @@ class RamModal(Modal, title="Alterar Memória RAM"):
              await self.view_parent.update_dashboard(interaction, silent_update=True)
 
 class DeleteAppModal(Modal, title="DELETAR APLICAÇÃO"):
-    confirm_id = TextInput(label="Confirme o ID da Aplicação", placeholder="Cole o ID aqui...", required=True)
+    confirm_input = TextInput(
+        label="Carregando...", 
+        placeholder="Digite o ID da aplicação aqui...", 
+        style=discord.TextStyle.short, 
+        required=True
+    )
+
     def __init__(self, app_id: str, view_parent):
         super().__init__()
         self.app_id = app_id
         self.view_parent = view_parent
-    async def on_submit(self, interaction: Interaction):
-        if self.confirm_id.value != self.app_id:
-            return await interaction.response.send_message("❌ ID Incorreto.", ephemeral=True)
         
-        # 1. Feedback visual no painel
+        self.confirm_input.label = f'Para confirmar, digite: {app_id}'
+        if len(self.confirm_input.label) > 45:
+            self.confirm_input.label = f"Digite: {app_id}"[:45]
+
+    async def on_submit(self, interaction: Interaction):
+        if self.confirm_input.value != self.app_id:
+            return await interaction.response.send_message(
+                f"❌ **Confirmação Incorreta.**\nVocê digitou `{self.confirm_input.value}`\nO ID correto é `{self.app_id}`.", 
+                ephemeral=True
+            )
+        
         await self.view_parent.set_processing(interaction, f"Deletando App: {self.app_id}")
         
         try:
-            result = await discloud_client.delete_app(self.app_id)
+            url = f"https://api.discloud.app/v2/app/{self.app_id}/delete"
+            headers = {
+                "api-token": DISCLOUD_TOKEN,
+                "Accept": "application/json"
+            }
             
-            embed = discord.Embed(
-                title="🗑️ Aplicação Deletada",
-                description=f"{result.message}",
-                color=C_GREEN if result.status == "ok" else C_RED
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-            
-            # Reseta o painel e atualiza silenciosamente
-            self.view_parent.selected_app_id = None
-            self.view_parent.current_mode = "home"
-            await self.view_parent.update_dashboard(interaction, silent_update=True)
-            
+            async with aiohttp.ClientSession() as session:
+                async with session.delete(url, headers=headers) as response:
+                    try:
+                        data = await response.json()
+                    except:
+                        data = {}
+                    
+                    if response.status == 200 or data.get("status") == "ok":
+                        msg = data.get("message", "Aplicação deletada com sucesso.")
+                        
+                        embed = discord.Embed(
+                            title=f"{E_SUCCESS} Aplicação Deletada!",
+                            description=f"A aplicação **{self.app_id}** foi removida permanentemente.",
+                            color=C_GREEN # Verde conforme o check
+                        )
+                        embed.add_field(name="📝 Detalhes da API", value=f"```diff\n- {msg}\n```")
+                        embed.set_footer(text="Discloud Manager • App removido", icon_url=interaction.client.user.display_avatar.url)
+                        embed.timestamp = datetime.now()
+                        
+                        await interaction.followup.send(embed=embed, ephemeral=True)
+                        
+                        self.view_parent.selected_app_id = None
+                        self.view_parent.current_mode = "home"
+                        await self.view_parent.update_dashboard(interaction, silent_update=True)
+                        
+                    else:
+                        error_msg = data.get("message", await response.text())
+                        raise Exception(f"API Error {response.status}: {error_msg}")
+
         except Exception as e:
-            await interaction.followup.send(f"❌ Erro ao deletar: {e}", ephemeral=True)
+            embed = discord.Embed(
+                title=f"{E_ERROR} Falha ao Deletar",
+                description=f"Não foi possível deletar a aplicação **{self.app_id}**.",
+                color=C_RED
+            )
+            embed.add_field(name="Erro Técnico", value=f"```\n{str(e)}\n```")
+            await interaction.followup.send(embed=embed, ephemeral=True)
             await self.view_parent.update_dashboard(interaction, silent_update=True)
 
 # --- UI COMPONENTES ---
 
 class AppSelect(Select):
-    def __init__(self, apps: List[ApplicationInfo]):
+    def __init__(self, apps: List[ApplicationInfo], selected_id: str = None):
         options = []
         for app in apps[:25]: 
             emoji = E_ONLINE if app.online else E_OFFLINE
             label = app.name
             desc = f"ID: {app.id} | {app.lang}"
-            options.append(discord.SelectOption(label=label, value=str(app.id), description=desc, emoji=emoji))
+            is_selected = str(app.id) == str(selected_id)
+            options.append(discord.SelectOption(
+                label=label, 
+                value=str(app.id), 
+                description=desc, 
+                emoji=emoji,
+                default=is_selected
+            ))
+            
+        if not options:
+            options.append(discord.SelectOption(label="Nenhuma aplicação encontrada", value="none", description="Use /upload para começar", emoji="📂"))
+
         super().__init__(placeholder="📂 Selecione uma aplicação ...", min_values=1, max_values=1, row=0, options=options)
 
     async def callback(self, interaction: Interaction):
+        if self.values[0] == "none":
+            return await interaction.response.defer()
+            
         self.view.selected_app_id = self.values[0]
         self.view.current_mode = "status"
         await self.view.update_dashboard(interaction)
@@ -480,12 +540,16 @@ class DashboardView(View):
         self.selected_app_id = None
         self.current_mode = "home"
         self.last_notification: Optional[Dict] = None 
-        if apps_info: self.add_item(AppSelect(apps_info))
+        
+        if apps_info: 
+            self.add_item(AppSelect(apps_info))
         self.create_nav_buttons()
 
     @property
     def current_app_name(self):
-        return self.apps_info_map[self.selected_app_id].name if self.selected_app_id else "Desconhecido"
+        if self.selected_app_id and self.selected_app_id in self.apps_info_map:
+            return self.apps_info_map[self.selected_app_id].name
+        return "Desconhecido"
 
     def create_nav_buttons(self):
         self.add_item(Button(label="Início", emoji=E_HOME, style=ButtonStyle.secondary, custom_id="mode_home", row=1))
@@ -494,6 +558,7 @@ class DashboardView(View):
         self.add_item(Button(label="Logs", emoji="<:terminal:1446262228121686088>", style=ButtonStyle.secondary, custom_id="mode_logs", row=1))
         self.add_item(Button(label="Tools", emoji="<:tools:1446905257417248818>", style=ButtonStyle.secondary, custom_id="mode_tools", row=2))
         self.add_item(Button(label="Mods", emoji="🛡️", style=ButtonStyle.secondary, custom_id="mode_mods", row=2))
+        
         for child in self.children:
             if isinstance(child, Button) and getattr(child, 'custom_id', '').startswith("mode_"): 
                 child.callback = self.nav_callback
@@ -510,71 +575,73 @@ class DashboardView(View):
         await self.update_dashboard(interaction)
 
     async def set_processing(self, interaction, action_name):
-        # Desabilita botões e mostra estado de carregamento
         for item in self.children: item.disabled = True
         embed = discord.Embed(
             title=f"{E_LOADING} Processando: {action_name}...", 
-            description="Aguarde enquanto a Discloud processa sua solicitação...\n*O painel será atualizado automaticamente.*", 
+            description="Aguarde enquanto a Discloud processa sua solicitação...", 
             color=C_GOLD
         )
-        
-        # Se a interação ainda não foi respondida, editamos a mensagem original via response
         if not interaction.response.is_done():
             await interaction.response.edit_message(embed=embed, view=self)
         else:
-            # Caso contrário (ex: defer foi chamado antes ou é followup), editamos via edit_original_response
             try:
                 await interaction.edit_original_response(embed=embed, view=self)
-            except discord.NotFound:
-                if interaction.message: await interaction.message.edit(embed=embed, view=self)
-            except Exception: pass
+            except: pass
 
     async def show_error(self, interaction, error, action_name):
-        # Erros gerais de navegação
-        for item in self.children: 
-            if getattr(item, 'row', 0) in [0, 1, 2]: item.disabled = False
+        for item in self.children: item.disabled = False
         embed = discord.Embed(title=f"{E_ERROR} Erro: {action_name}", description=f"```{error}```", color=C_RED)
-        retry_btn = Button(label="Tentar Novamente", style=ButtonStyle.secondary, emoji="↩️", row=3)
-        async def retry_cb(intx): await self.update_dashboard(intx)
-        retry_btn.callback = retry_cb
-        self.clear_dynamic_buttons()
-        self.add_item(retry_btn)
         try:
-            await interaction.edit_original_response(embed=embed, view=self)
-        except discord.NotFound:
-            if interaction.message: await interaction.message.edit(embed=embed, view=self)
+            if not interaction.response.is_done():
+                await interaction.response.edit_message(embed=embed, view=self)
+            else:
+                await interaction.edit_original_response(embed=embed, view=self)
+        except: pass
 
     async def update_dashboard(self, interaction: Interaction, silent_update: bool = False):
-        """
-        silent_update=True: Não tenta responder a interação, apenas edita a mensagem original.
-        Útil quando a interação já foi respondida com uma mensagem efêmera.
-        """
-        self.clear_dynamic_buttons()
-        for item in self.children:
-            item.disabled = False
-            if isinstance(item, Button) and getattr(item, 'custom_id', '').startswith("mode_"):
-                if self.current_mode == "home":
-                    if item.custom_id != "mode_home":
-                        item.style = ButtonStyle.secondary
-                    else:
-                        item.style = ButtonStyle.success
-                        item.disabled = True
-                else:
-                    if item.custom_id == f"mode_{self.current_mode}":
-                        item.style = ButtonStyle.success
-                        item.disabled = True
-                    else:
-                        item.style = ButtonStyle.secondary
-                        if item.custom_id == "mode_home": item.style = ButtonStyle.secondary
-
         try:
+            try:
+                apps = await discloud_client.app_info("all")
+                apps = apps if isinstance(apps, list) else [apps] if apps else []
+                self.apps_info_map = {app.id: app for app in apps}
+            except Exception as e:
+                print(f"Erro ao atualizar lista de apps: {e}")
+                apps = list(self.apps_info_map.values())
+
+            if self.selected_app_id and self.selected_app_id not in self.apps_info_map:
+                self.selected_app_id = None
+                self.current_mode = "home"
+                if self.last_notification is None:
+                    self.last_notification = {"title": "⚠️ Aviso", "description": "A aplicação selecionada não existe mais.", "color": C_GOLD}
+
+            self.clear_items()
+            self.add_item(AppSelect(apps, self.selected_app_id))
+            self.create_nav_buttons()
+
+            for item in self.children:
+                item.disabled = False
+                if isinstance(item, Button) and getattr(item, 'custom_id', '').startswith("mode_"):
+                    if self.current_mode == "home":
+                        if item.custom_id != "mode_home":
+                            item.style = ButtonStyle.secondary
+                        else:
+                            item.style = ButtonStyle.success
+                            item.disabled = True
+                    else:
+                        if item.custom_id == f"mode_{self.current_mode}":
+                            item.style = ButtonStyle.success
+                            item.disabled = True
+                        else:
+                            item.style = ButtonStyle.secondary
+                            if item.custom_id == "mode_home": item.style = ButtonStyle.secondary
+
             embed = None
             if self.current_mode == "home" or self.selected_app_id is None:
                 embed = await self.build_home_view(interaction.user)
             elif self.current_mode == "status":
                 embed = await self.build_status_view()
                 btn_ref = Button(label="Atualizar", emoji="🔄", style=ButtonStyle.gray, row=3)
-                btn_ref.callback = self.update_dashboard
+                btn_ref.callback = self.refresh_click
                 self.add_item(btn_ref)
             elif self.current_mode == "control":
                 embed = discord.Embed(title=f"<:controle:1446905259191570464> Controle: {self.current_app_name}", color=C_GOLD, description="Gerencie a sua aplicação.")
@@ -582,7 +649,7 @@ class DashboardView(View):
             elif self.current_mode == "logs":
                 embed = await self.build_logs_view()
                 btn_ref = Button(label="Atualizar Logs", emoji="🔄", style=ButtonStyle.primary, row=3)
-                btn_ref.callback = self.update_dashboard
+                btn_ref.callback = self.refresh_click
                 self.add_item(btn_ref)
             elif self.current_mode == "tools":
                 embed = await self.build_tools_view()
@@ -591,7 +658,6 @@ class DashboardView(View):
                 embed = await self.build_mods_view()
                 await self.add_mods_buttons(interaction)
 
-            # --- INJEÇÃO DE NOTIFICAÇÕES (APENAS MODS AGORA) ---
             if self.last_notification:
                 embed.insert_field_at(0, 
                     name=self.last_notification['title'], 
@@ -600,15 +666,11 @@ class DashboardView(View):
                 )
                 embed.color = self.last_notification.get('color', embed.color)
                 self.last_notification = None
-            # -----------------------------------------------
 
-            # Lógica de Edição vs Resposta
             if silent_update:
-                # Se for silencioso, assume que a mensagem existe e só edita
                 if interaction.message:
                     await interaction.message.edit(embed=embed, view=self)
                 else:
-                    # Tenta editar a original response caso interaction.message seja None
                     await interaction.edit_original_response(embed=embed, view=self)
             elif interaction.response.is_done():
                 try:
@@ -619,22 +681,20 @@ class DashboardView(View):
                 await interaction.response.edit_message(embed=embed, view=self)
                 
         except Exception as e: 
-            # Se for erro silencioso, imprime. Se não, mostra no painel.
-            if silent_update:
-                print(f"Erro no update silencioso: {e}")
-            else:
+            if not silent_update:
                 await self.show_error(interaction, e, "Carregar Painel")
+            else:
+                print(f"Erro update silencioso: {e}")
+
+    async def refresh_click(self, interaction: Interaction):
+        await self.update_dashboard(interaction)
 
     def clear_dynamic_buttons(self):
-        items_to_keep = [item for item in self.children if getattr(item, 'row', 0) in [0, 1, 2]]
-        self.clear_items()
-        for item in items_to_keep: self.add_item(item)
+        pass 
     
-    # --- BUILDERS ---
     async def build_home_view(self, user_discord):
         user = await discloud_client.user_info()
-        apps = await discloud_client.app_info("all")
-        apps = apps if isinstance(apps, list) else [apps] if apps else []
+        apps = list(self.apps_info_map.values())
         
         embed = discord.Embed(title=f"{E_PLAN} Olá, Disclouder!", color=C_PURPLE)
         embed.set_thumbnail(url=user_discord.display_avatar.url)
@@ -740,7 +800,7 @@ class DashboardView(View):
     async def build_mods_view(self):
         mods = await discloud.ModManager(discloud_client, self.selected_app_id).get_mods()
         mods = mods if isinstance(mods, list) else [mods] if mods else []
-        self._current_mods_cache = mods # Cache temporário para usar nos botões
+        self._current_mods_cache = mods 
         embed = discord.Embed(title=f"{E_MODS} Equipe: {self.current_app_name}", color=C_PURPLE)
         if not mods: embed.description = "Nenhum moderador extra configurado."
         for mod in mods:
@@ -754,113 +814,109 @@ class DashboardView(View):
         self.make_btn("Parar", E_OFFLINE, ButtonStyle.danger, discloud_client.stop)
     
     def add_tools_buttons(self):
-        # Backup (Mensagem Efêmera com Botão de Link)
+        # Backup 
         btn_bkp = Button(label="Baixar Backup", emoji="<:backup:1446905215050842254>", style=ButtonStyle.secondary, row=3)
         async def bkp_cb(i):
             await self.set_processing(i, "Gerando Backup")
             try:
                 b = await discloud_client.backup(self.selected_app_id)
-                # Verifica se é lista ou objeto único, conforme comportamento da lib
                 url = b.url if not isinstance(b, list) else b[0].url
-                
-                # CRIAÇÃO DO BOTÃO DE LINK
                 link_button = Button(label="Baixar Backup", style=ButtonStyle.link, url=url, emoji="<:backup:1446905215050842254>")
                 link_view = View()
                 link_view.add_item(link_button)
                 
-                await i.followup.send(f"{E_SUCCESS} **Backup gerado com sucesso!**\nClique no botão abaixo para iniciar o download.", view=link_view, ephemeral=True)
+                embed = discord.Embed(title=f"{E_SUCCESS} Backup Gerado!", description="Clique no botão abaixo para baixar.", color=C_GREEN)
+                embed.set_footer(text="Discloud Manager", icon_url=i.client.user.display_avatar.url)
+                embed.timestamp = datetime.now()
+                
+                await i.followup.send(embed=embed, view=link_view, ephemeral=True)
             except Exception as e: 
-                await i.followup.send(f"❌ Erro ao gerar Backup: {e}", ephemeral=True)
-            
+                await i.followup.send(f"❌ Erro: {e}", ephemeral=True)
             await self.update_dashboard(i, silent_update=True)
-            
         btn_bkp.callback = bkp_cb
         self.add_item(btn_bkp)
 
-        # RAM (Modal -> Efêmero)
+        # RAM
         btn_ram = Button(label="Mudar RAM", emoji=E_RAM, style=ButtonStyle.secondary, row=3)
         async def ram_cb(i): await i.response.send_modal(RamModal(self.selected_app_id, self))
         btn_ram.callback = ram_cb
         self.add_item(btn_ram)
         
-        # Mudar Nome
+        # Nome
         btn_name = Button(label="Mudar Nome", emoji="✏️", style=ButtonStyle.secondary, row=3)
         async def name_cb(i): await i.response.send_modal(ChangeNameModal(self.selected_app_id, self))
         btn_name.callback = name_cb
         self.add_item(btn_name)
 
-        # Mudar Avatar
+        # Avatar
         btn_avatar = Button(label="Mudar Avatar", emoji="🖼️", style=ButtonStyle.secondary, row=3)
         async def avatar_cb(i): await i.response.send_modal(ChangeAvatarModal(self.selected_app_id, self))
         btn_avatar.callback = avatar_cb
         self.add_item(btn_avatar)
         
-        # Deletar (Modal -> Efêmero)
+        # Deletar
         btn_del = Button(label="Deletar App", emoji="🗑️", style=ButtonStyle.danger, row=3)
         async def del_cb(i): await i.response.send_modal(DeleteAppModal(self.selected_app_id, self))
         btn_del.callback = del_cb
         self.add_item(btn_del)
 
     async def add_mods_buttons(self, interaction):
-        # 1. Botão Adicionar (Chama Modal ID -> View Permissões)
         btn_add = Button(label="Adicionar", emoji="➕", style=ButtonStyle.success, row=3)
-        async def add(i): 
-            await i.response.send_modal(AddModIdModal(self.selected_app_id, self))
+        async def add(i): await i.response.send_modal(AddModIdModal(self.selected_app_id, self))
         btn_add.callback = add
         self.add_item(btn_add)
 
-        # 2. Botão Editar (SUBSTITUI O PAINEL)
         btn_edit = Button(label="Editar", emoji="✏️", style=ButtonStyle.primary, row=3)
         async def edit(i):
-            if not getattr(self, '_current_mods_cache', []):
-                return await i.response.send_message("❌ Não há mods para editar.", ephemeral=True)
-            
-            # SUBSTITUIÇÃO DO PAINEL
-            embed = discord.Embed(title="✏️ Editar Moderador", description="Selecione o moderador na lista abaixo:", color=C_BLUE)
-            await i.response.edit_message(
-                embed=embed,
-                view=ModSelectionView(self._current_mods_cache, "edit", self, self.selected_app_id)
-            )
+            if not getattr(self, '_current_mods_cache', []): return await i.response.send_message("❌ Sem mods.", ephemeral=True)
+            embed = discord.Embed(title="✏️ Editar Moderador", description="Selecione abaixo:", color=C_BLUE)
+            await i.response.edit_message(embed=embed, view=ModSelectionView(self._current_mods_cache, "edit", self, self.selected_app_id))
         btn_edit.callback = edit
         self.add_item(btn_edit)
 
-        # 3. Botão Remover (SUBSTITUI O PAINEL)
         btn_rem = Button(label="Remover", emoji="🗑️", style=ButtonStyle.danger, row=3)
         async def rem(i):
-            if not getattr(self, '_current_mods_cache', []):
-                return await i.response.send_message("❌ Não há mods para remover.", ephemeral=True)
-            
-            # SUBSTITUIÇÃO DO PAINEL
-            embed = discord.Embed(title="🗑️ Remover Moderador", description="Selecione os moderadores na lista abaixo e clique em Confirmar:", color=C_RED)
-            await i.response.edit_message(
-                embed=embed,
-                view=ModSelectionView(self._current_mods_cache, "remove", self, self.selected_app_id)
-            )
+            if not getattr(self, '_current_mods_cache', []): return await i.response.send_message("❌ Sem mods.", ephemeral=True)
+            embed = discord.Embed(title="🗑️ Remover Moderador", description="Selecione abaixo:", color=C_RED)
+            await i.response.edit_message(embed=embed, view=ModSelectionView(self._current_mods_cache, "remove", self, self.selected_app_id))
         btn_rem.callback = rem
         self.add_item(btn_rem)
 
     def make_btn(self, lbl, emj, style, func):
         btn = Button(label=lbl, emoji=emj, style=style, row=3)
         async def cb(i):
-            # AQUI: Não usamos defer() para podermos usar edit_message no set_processing
             await self.set_processing(i, lbl)
             try:
                 res = await func(self.selected_app_id)
-                await i.followup.send(f"{E_SUCCESS} {lbl}: {res.message}", ephemeral=True)
+                
+                # --- EMBED PADRONIZADO (Sucesso) ---
+                action_map = {"Iniciar": "Iniciada", "Parar": "Parada", "Reiniciar": "Reiniciada"}
+                past_tense = action_map.get(lbl, lbl + "do")
+                
+                embed = discord.Embed(
+                    title=f"{E_SUCCESS} Aplicação {past_tense}!", 
+                    description=f"O comando de **{lbl.lower()}** foi enviado com sucesso para a Discloud.",
+                    color=C_GREEN
+                )
+                
+                # Garante que a mensagem tenha o "+" para ficar verde no diff
+                clean_msg = res.message if res.message.startswith("+") else f"+ {res.message}"
+                
+                embed.add_field(name="📝 Detalhes da API", value=f"```diff\n{clean_msg}\n```", inline=False)
+                embed.set_footer(text=f"Discloud Manager • {lbl} • {datetime.now().strftime('%H:%M')}", icon_url=i.client.user.display_avatar.url)
+                embed.timestamp = datetime.now()
+
+                await i.followup.send(embed=embed, ephemeral=True)
+                
                 self.current_mode="status"
                 await self.update_dashboard(i, silent_update=True)
+                
             except Exception as e:
-                # Tratamento amigável para "Já iniciado/parado"
-                err_msg = str(e).lower() # Lowercase para facilitar
-                # Palavras-chave que indicam estado redundante
-                # "já está" (pt), "already" (en), "ja esta" (no accent)
+                err_msg = str(e).lower()
                 if any(x in err_msg for x in ["já está", "ja esta", "already"]):
-                    friendly_text = "⚠️ O estado da aplicação já corresponde ao solicitado."
-                    
-                    if any(x in err_msg for x in ["desligado", "offline", "stop", "parado"]):
-                        friendly_text = "⚠️ A aplicação já está desligada."
-                    elif any(x in err_msg for x in ["ligado", "online", "start", "rodando", "running"]):
-                        friendly_text = "⚠️ A aplicação já está ligada."
+                    friendly_text = "⚠️ O estado já corresponde ao solicitado."
+                    if any(x in err_msg for x in ["desligado", "offline", "stop", "parado"]): friendly_text = "⚠️ Já está desligada."
+                    elif any(x in err_msg for x in ["ligado", "online", "start", "rodando"]): friendly_text = "⚠️ Já está ligada."
                     
                     await i.followup.send(friendly_text, ephemeral=True)
                     await self.update_dashboard(i, silent_update=True)
@@ -899,36 +955,125 @@ async def painel(interaction: Interaction):
 @bot.tree.command(name="commit", description="Fazer Upload/Update do Bot (.zip)")
 @app_commands.describe(app_id="ID do App", file_attachment="Arquivo .zip")
 async def commit(interaction: Interaction, app_id: str, file_attachment: discord.Attachment):
+    if not file_attachment.filename.endswith(".zip"):
+        return await interaction.response.send_message("❌ **Erro de Formato:** O arquivo precisa terminar em `.zip`.", ephemeral=True)
+
     await interaction.response.defer()
-    if not file_attachment.filename.endswith(".zip"): return await interaction.followup.send("❌ Deve ser .zip")
+
+    loading_embed = discord.Embed(
+        title=f"📦 Preparando Commit",
+        description=f"Iniciando o envio dos arquivos para a Discloud...",
+        color=C_GOLD
+    )
+    loading_embed.add_field(name="📂 Arquivo", value=f"`{file_attachment.filename}`", inline=True)
+    loading_embed.add_field(name="🆔 Aplicação", value=f"`{app_id}`", inline=True)
+    loading_embed.set_footer(text="Aguarde, processando upload...", icon_url="https://cdn.discordapp.com/emojis/1136665045474320455.gif")
+    
+    await interaction.followup.send(embed=loading_embed)
+
     try:
-        d_file = discloud.File(io.BytesIO(await file_attachment.read()))
+        file_bytes = io.BytesIO(await file_attachment.read())
+        d_file = discloud.File(file_bytes)
         d_file.filename = file_attachment.filename
+
         res = await discloud_client.commit(app_id, d_file)
-        await interaction.followup.send(embed=discord.Embed(title="📦 Commit OK", description=res.message, color=C_GREEN))
-    except Exception as e: await interaction.followup.send(f"❌ Erro: {e}")
+
+        if res.status == "ok":
+            success_embed = discord.Embed(
+                title=f"{E_SUCCESS} Atualização Concluída!",
+                description=f"Os arquivos da aplicação **{app_id}** foram atualizados com sucesso na nuvem.",
+                color=C_GREEN
+            )
+            msg_formatada = res.message
+            if "The files of your app have been updated" in res.message:
+                 msg_formatada = "Os arquivos foram sincronizados e o deploy iniciado."
+            
+            # --- PADRÃO DIFF ---
+            success_embed.add_field(name="📝 Detalhes da API", value=f"```diff\n+ {msg_formatada}\n```", inline=False)
+            success_embed.set_footer(text="Discloud Manager • Deploy realizado", icon_url=interaction.client.user.display_avatar.url)
+            success_embed.timestamp = datetime.now()
+
+            await interaction.edit_original_response(embed=success_embed)
+        else:
+            error_embed = discord.Embed(
+                title=f"{E_ERROR} Falha na Atualização",
+                description="Houve um problema ao processar seu commit na Discloud.",
+                color=C_RED
+            )
+            error_embed.add_field(name="🔍 Detalhes do Erro", value=f"```yaml\n{res.message}\n```", inline=False)
+            error_embed.set_footer(text="Verifique o ID da aplicação e o arquivo ZIP.")
+            
+            await interaction.edit_original_response(embed=error_embed)
+
+    except Exception as e:
+        fail_embed = discord.Embed(
+            title=f"{E_WARN} Erro Interno",
+            description="Não foi possível completar a solicitação devido a um erro no bot.",
+            color=C_RED
+        )
+        fail_embed.add_field(name="🛑 Log de Erro", value=f"```python\n{str(e)}\n```", inline=False)
+        await interaction.edit_original_response(embed=fail_embed)
 
 @bot.tree.command(name="upload", description="Subir uma NOVA aplicação para a Discloud (.zip)")
 @app_commands.describe(file_attachment="Arquivo .zip da aplicação")
 async def upload(interaction: Interaction, file_attachment: discord.Attachment):
     if not file_attachment.filename.endswith(".zip"):
-        return await interaction.response.send_message("❌ O arquivo deve ser um .zip!", ephemeral=True)
+        return await interaction.response.send_message("❌ **Erro de Formato:** O arquivo precisa terminar em `.zip`.", ephemeral=True)
+
     await interaction.response.defer()
-    loading_embed = discord.Embed(title=f"{E_UPLOAD} Iniciando Upload...", description=f"Carregando `{file_attachment.filename}`...\nAguarde...", color=C_GOLD)
+
+    loading_embed = discord.Embed(
+        title=f"{E_UPLOAD} Iniciando Upload",
+        description=f"Preparando o ambiente para hospedar sua nova aplicação...",
+        color=C_GOLD
+    )
+    loading_embed.add_field(name="📂 Arquivo", value=f"`{file_attachment.filename}`", inline=True)
+    loading_embed.set_footer(text="Enviando para a Discloud... Aguarde.", icon_url="https://cdn.discordapp.com/emojis/1136665045474320455.gif")
+    
     await interaction.followup.send(embed=loading_embed)
+
     try:
         file_bytes = io.BytesIO(await file_attachment.read())
         d_file = discloud.File(file_bytes)
         d_file.filename = file_attachment.filename
+
         result = await discloud_client.upload_app(file=d_file)
+
         if result.status == "ok":
-            success_embed = discord.Embed(title=f"{E_SUCCESS} Upload Concluído!", description=f"**Status:** {result.status}\n**Mensagem:** {result.message}\n\nUse `/painel`.", color=C_GREEN)
+            success_embed = discord.Embed(
+                title=f"{E_SUCCESS} Upload Realizado!",
+                description=f"Sua aplicação foi enviada e está sendo processada pela Discloud.",
+                color=C_GREEN
+            )
+            
+            msg_content = result.message
+            
+            # --- PADRÃO DIFF ---
+            success_embed.add_field(name="📝 Detalhes da API", value=f"```diff\n+ {msg_content}\n```", inline=False)
+            success_embed.add_field(name="🚀 Próximos Passos", value="Use o comando `/painel` para gerenciar, iniciar e ver os logs da sua nova aplicação.", inline=False)
+            
+            success_embed.set_footer(text="Discloud Manager • Hospedagem iniciada", icon_url=interaction.client.user.display_avatar.url)
+            success_embed.timestamp = datetime.now()
+
             await interaction.edit_original_response(embed=success_embed)
         else:
-            error_embed = discord.Embed(title=f"{E_ERROR} Falha no Upload", description=f"**Status:** {result.status}\n**Erro:** {result.message}", color=C_RED)
+            error_embed = discord.Embed(
+                title=f"{E_ERROR} Falha no Upload",
+                description="A Discloud recusou o arquivo ou houve um erro de validação.",
+                color=C_RED
+            )
+            error_embed.add_field(name="🔍 Motivo", value=f"```yaml\n{result.message}\n```", inline=False)
+            error_embed.set_footer(text="Verifique se o arquivo contém o discloud.config correto.")
+            
             await interaction.edit_original_response(embed=error_embed)
+
     except Exception as e:
-        fail_embed = discord.Embed(title=f"{E_ERROR} Erro Crítico", description=f"```{str(e)}```", color=C_RED)
+        fail_embed = discord.Embed(
+            title=f"{E_WARN} Erro Interno",
+            description="Ocorreu um erro inesperado ao tentar enviar o arquivo.",
+            color=C_RED
+        )
+        fail_embed.add_field(name="🛑 Log de Erro", value=f"```python\n{str(e)}\n```", inline=False)
         await interaction.edit_original_response(embed=fail_embed)
 
 if __name__ == "__main__":
