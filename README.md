@@ -33,7 +33,7 @@ Um bot completo com painel interativo para controlar, monitorar e fazer deploy d
 * [❓ Perguntas Frequentes (FAQ)](#-perguntas-frequentes-faq)
 * [🤝 Como Contribuir](#-como-contribuir)
 * [📝 Changelog](#-changelog)
-* [⚖️ Licença](#-licença)
+* [⚖️ Licença](#licenca)
 * [🙏 Agradecimentos](#-agradecimentos)
 * [📞 Suporte](#-suporte)
 
@@ -319,7 +319,7 @@ Contribuições são sempre bem-vindas! Se você tem uma ideia de melhoria:
 
 ---
 
-## ⚖️ Licença
+##<a id="licenca"></a> ⚖️ Licença
 
 Este projeto está licenciado sob a licença **MIT**.
 
