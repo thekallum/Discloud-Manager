@@ -903,7 +903,7 @@ class DashboardView(View):
                 clean_msg = res.message if res.message.startswith("+") else f"+ {res.message}"
                 
                 embed.add_field(name="📝 Detalhes da API", value=f"```diff\n{clean_msg}\n```", inline=False)
-                embed.set_footer(text=f"Discloud Manager • {lbl} • {datetime.now().strftime('%H:%M')}", icon_url=i.client.user.display_avatar.url)
+                embed.set_footer(text=f"Discloud Manager • {lbl}", icon_url=i.client.user.display_avatar.url)
                 embed.timestamp = datetime.now()
 
                 await i.followup.send(embed=embed, ephemeral=True)
@@ -915,8 +915,8 @@ class DashboardView(View):
                 err_msg = str(e).lower()
                 if any(x in err_msg for x in ["já está", "ja esta", "already"]):
                     friendly_text = "⚠️ O estado já corresponde ao solicitado."
-                    if any(x in err_msg for x in ["desligado", "offline", "stop", "parado"]): friendly_text = "⚠️ Já está desligada."
-                    elif any(x in err_msg for x in ["ligado", "online", "start", "rodando"]): friendly_text = "⚠️ Já está ligada."
+                    if any(x in err_msg for x in ["desligado", "offline", "stop", "parado"]): friendly_text = "⚠️ A aplicação já está desligada."
+                    elif any(x in err_msg for x in ["ligado", "online", "start", "rodando"]): friendly_text = "⚠️ A aplicação já está ligada."
                     
                     await i.followup.send(friendly_text, ephemeral=True)
                     await self.update_dashboard(i, silent_update=True)
