@@ -34,7 +34,7 @@ Um bot completo com painel interativo para controlar, monitorar e fazer deploy d
 * [🤝 Como Contribuir](#-como-contribuir)
 * [📝 Changelog](#-changelog)
 * [⚖️ Licença](#licenca)
-* [🙏 Agradecimentos](#-agradecimentos)
+* [🤙 Agradecimentos](#-agradecimentos)
 * [📞 Suporte](#-suporte)
 
 ---
@@ -332,7 +332,7 @@ Para ler a licença completa, veja o arquivo [LICENSE](./LICENSE) neste reposit�
 
 ---
 
-## 🙏 Agradecimentos
+## 🤙 Agradecimentos
 
 - [Discord.py](https://github.com/Rapptz/discord.py) - Framework incrível para bots Discord
 - [Discloud](https://discloud.com) - Hospedagem confiável para bots e sites
